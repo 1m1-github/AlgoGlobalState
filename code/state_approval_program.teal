@@ -1,0 +1,71 @@
+#pragma version 6
+
+// allow accounts to set local state
+// if community agrees to consider this dApp as **the** global state dApp,
+// then the local state of each account can be considered a global state
+
+////////////////
+// Handle each possible OnCompletion type. We don't have to worry about
+// handling ClearState, because the ClearStateProgram will execute in that
+// case, not the ApprovalProgram.
+
+txn OnCompletion
+int NoOp
+==
+bnz handle_noop
+
+txn OnCompletion
+int OptIn
+==
+b approve
+
+txn OnCompletion
+int CloseOut
+==
+b approve
+
+txn OnCompletion
+int UpdateApplication
+==
+b decline
+
+txn OnCompletion
+int DeleteApplication
+==
+b decline
+
+// Unexpected OnCompletion value. Should be unreachable.
+b decline
+////////////////
+
+
+////////////////
+handle_noop:
+
+txn Sender
+txna ApplicationArgs 0
+txna ApplicationArgs 1
+app_local_put
+
+b approve
+
+////////////////
+
+
+////////////////
+// end branches
+decline:
+int 0
+return
+
+approve:
+int 1
+return
+////////////////
+
+
+////////////////
+// fyi
+// Txn.Accounts[0] is sender of txn
+// Txn.Apps[0] is own app
+////////////////
